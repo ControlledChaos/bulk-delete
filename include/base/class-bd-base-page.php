@@ -120,7 +120,7 @@ abstract class BD_Base_Page {
 	 */
 	public function add_menu() {
 		$this->screen = add_submenu_page(
-			Bulk_Delete::POSTS_PAGE_SLUG,
+			$this->get_base_page_slug(),
 			$this->label['page_title'],
 			$this->label['menu_title'],
 			$this->capability,
@@ -273,6 +273,33 @@ abstract class BD_Base_Page {
 	 */
 	public function get_page_slug() {
 		return $this->page_slug;
+	}
+
+	/**
+	 * Get the page slug of base page.
+	 *
+	 * @return string Page slug.
+	 */
+	public function get_base_page_slug() {
+		$bd = BULK_DELETE();
+	    if ( $this->is_bulk_delete_menu_registered() ) {
+			return $bd::POSTS_PAGE_SLUG;
+		}
+
+		return 'bulk-delete-posts';
+	}
+
+	/**
+	 * Is the bulk delete menu already registered?
+	 *
+	 * @return bool True if registered, False otherwise.
+	 */
+	protected function is_bulk_delete_menu_registered() {
+		global $admin_page_hooks;
+
+		$bd = BULK_DELETE();
+
+		return ! empty( $admin_page_hooks[ $bd::POSTS_PAGE_SLUG ] );
 	}
 }
 ?>
