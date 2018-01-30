@@ -23,6 +23,8 @@ abstract class BD_Base_Page {
 	 */
 	protected $page_slug;
 
+	protected $item_type;
+
 	/**
 	 * @var string Menu action.
 	 */
@@ -108,6 +110,7 @@ abstract class BD_Base_Page {
 	protected function setup_hooks() {
 		add_action( $this->menu_action, array( $this, 'add_menu' ) );
 		add_action( "bd_admin_footer_for_{$this->page_slug}", array( $this, 'modify_admin_footer' ) );
+		add_action( 'admin_print_scripts-' . $this->page_slug, array( $this, 'add_script' ) );
 
 		add_filter( 'bd_action_nonce_check', array( $this, 'nonce_check' ), 10, 2 );
 		add_filter( 'bd_admin_help_tabs', array( $this, 'render_help_tab' ), 10, 2 );
@@ -127,6 +130,8 @@ abstract class BD_Base_Page {
 			$this->page_slug,
 			array( $this, 'render_page' )
 		);
+
+		add_action( "load-{$this->screen}", array( $this, "add_delete_settings_panel" ) );
 	}
 
 	/**
@@ -258,6 +263,63 @@ abstract class BD_Base_Page {
 	}
 
 	/**
+	 * Enqueue Scripts and Styles.
+	 */
+	public function add_script() {
+		global $wp_scripts;
+		$bd = BULK_DELETE();
+
+		/**
+		 * Runs just before enqueuing scripts and styles in all Bulk WP admin pages.
+		 *
+		 * This action is primarily for registering or deregistering additional scripts or styles.
+		 *
+		 * @since 5.5.1
+		 */
+		do_action( 'bd_before_admin_enqueue_scripts' );
+
+		wp_enqueue_script( 'jquery-ui-timepicker', plugins_url( '/assets/js/jquery-ui-timepicker-addon.min.js', $bd::$PLUGIN_FILE ), array( 'jquery-ui-slider', 'jquery-ui-datepicker' ), '1.5.4', true );
+		wp_enqueue_style( 'jquery-ui-timepicker', plugins_url( '/assets/css/jquery-ui-timepicker-addon.min.css', $bd::$PLUGIN_FILE ), array(), '1.5.4' );
+
+		wp_enqueue_script( 'select2', plugins_url( '/assets/js/select2.min.js', $bd::$PLUGIN_FILE ), array( 'jquery' ), '4.0.0', true );
+		wp_enqueue_style( 'select2', plugins_url( '/assets/css/select2.min.css', $bd::$PLUGIN_FILE ), array(), '4.0.0' );
+
+		$postfix = ( defined( 'SCRIPT_DEBUG' ) && true === SCRIPT_DEBUG ) ? '' : '.min';
+		wp_enqueue_script( $bd::JS_HANDLE, plugins_url( '/assets/js/bulk-delete' . $postfix . '.js', $bd::$PLUGIN_FILE ), array( 'jquery-ui-timepicker', 'jquery-ui-tooltip' ), $bd::VERSION, true );
+		wp_enqueue_style( $bd::CSS_HANDLE, plugins_url( '/assets/css/bulk-delete' . $postfix . '.css', $bd::$PLUGIN_FILE ), array( 'select2' ), $bd::VERSION );
+
+		$ui  = $wp_scripts->query( 'jquery-ui-core' );
+		$url = "//ajax.googleapis.com/ajax/libs/jqueryui/{$ui->ver}/themes/smoothness/jquery-ui.css";
+		wp_enqueue_style( 'jquery-ui-smoothness', $url, false, $ui->ver );
+
+		/**
+		 * Filter JavaScript array.
+		 *
+		 * This filter can be used to extend the array that is passed to JavaScript
+		 *
+		 * @since 5.4
+		 */
+		$translation_array = apply_filters( 'bd_javascript_array', array(
+			'msg'            => array(),
+			'validators'     => array(),
+			'dt_iterators'   => array(),
+			'pre_action_msg' => array(),
+			'error_msg'      => array(),
+			'pro_iterators'  => array(),
+		) );
+		wp_localize_script( $bd::JS_HANDLE, $bd::JS_VARIABLE, $translation_array );
+
+		/**
+		 * Runs just after enqueuing scripts and styles in all Bulk WP admin pages.
+		 *
+		 * This action is primarily for registering additional scripts or styles.
+		 *
+		 * @since 5.5.1
+		 */
+		do_action( 'bd_after_admin_enqueue_scripts' );
+	}
+
+	/**
 	 * Getter for screen.
 	 *
 	 * @return string Current value of screen
@@ -300,6 +362,24 @@ abstract class BD_Base_Page {
 		$bd = BULK_DELETE();
 
 		return ! empty( $admin_page_hooks[ $bd::POSTS_PAGE_SLUG ] );
+	}
+
+	/**
+	 * Add settings Panel for delete posts page.
+	 */
+	public function add_delete_settings_panel() {
+		/**
+		 * Add contextual help for admin screens.
+		 *
+		 * @since 5.1
+		 */
+		do_action( 'bd_add_contextual_help', $this->item_type );
+
+		/* Trigger the add_meta_boxes hooks to allow meta boxes to be added */
+		do_action( 'add_meta_boxes_' . $this->screen, null );
+
+		/* Enqueue WordPress' script for handling the meta boxes */
+		wp_enqueue_script( 'postbox' );
 	}
 }
 ?>

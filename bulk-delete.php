@@ -380,10 +380,6 @@ final class Bulk_Delete {
 	 * Add navigation menu.
 	 */
 	public function add_menu() {
-		//add_menu_page( __( 'Bulk WP', 'bulk-delete' ), __( 'Bulk WP', 'bulk-delete' ), 'manage_options', self::POSTS_PAGE_SLUG, array( $this, 'display_posts_page' ), 'dashicons-trash', self::MENU_ORDER );
-
-		//$this->posts_page = add_submenu_page( self::POSTS_PAGE_SLUG, __( 'Bulk Delete Posts', 'bulk-delete' ), __( 'Bulk Delete Posts', 'bulk-delete' ), 'delete_posts', self::POSTS_PAGE_SLUG, array( $this, 'display_posts_page' ) );
-		global $bd_posts_page;
 		$this->pages_page = add_submenu_page( self::POSTS_PAGE_SLUG, __( 'Bulk Delete Pages', 'bulk-delete' ), __( 'Bulk Delete Pages', 'bulk-delete' ), 'delete_pages', self::PAGES_PAGE_SLUG, array( $this, 'display_pages_page' ) );
 
 		/**
@@ -416,12 +412,10 @@ final class Bulk_Delete {
 		 */
 		do_action( 'bd_after_all_menus' );
 
-		// enqueue JavaScript
-		add_action( 'admin_print_scripts-' . $this->posts_page, array( $this, 'add_script' ) );
 		add_action( 'admin_print_scripts-' . $this->pages_page, array( $this, 'add_script' ) );
 
 		// delete posts page
-		add_action( "load-{$this->posts_page}", array( $this, 'add_delete_posts_settings_panel' ) );
+		//add_action( "load-{$this->posts_page}", array( $this, 'add_delete_posts_settings_panel' ) );
 		add_action( "add_meta_boxes_{$this->posts_page}", array( $this, 'add_delete_posts_meta_boxes' ) );
 
 		// delete pages page
@@ -559,53 +553,6 @@ final class Bulk_Delete {
 		 * @since 5.5.1
 		 */
 		do_action( 'bd_after_admin_enqueue_scripts' );
-	}
-
-	/**
-	 * Show the delete posts page.
-	 *
-	 * @Todo Move this function to Bulk_Delete_Posts class
-	 */
-	public function display_posts_page() {
-?>
-<div class="wrap">
-    <h2><?php _e( 'Bulk Delete Posts', 'bulk-delete' );?></h2>
-    <?php settings_errors(); ?>
-
-    <form method = "post">
-<?php
-		// nonce for bulk delete
-		wp_nonce_field( 'sm-bulk-delete-posts', 'sm-bulk-delete-posts-nonce' );
-
-		/* Used to save closed meta boxes and their order */
-		wp_nonce_field( 'meta-box-order', 'meta-box-order-nonce', false );
-		wp_nonce_field( 'closedpostboxes', 'closedpostboxesnonce', false );
-?>
-    <div id = "poststuff">
-        <div id="post-body" class="metabox-holder columns-1">
-
-            <div class="notice notice-warning">
-                <p><strong><?php _e( 'WARNING: Posts deleted once cannot be retrieved back. Use with caution.', 'bulk-delete' ); ?></strong></p>
-            </div>
-
-            <div id="postbox-container-2" class="postbox-container">
-                <?php do_meta_boxes( '', 'advanced', null ); ?>
-            </div> <!-- #postbox-container-2 -->
-
-        </div> <!-- #post-body -->
-    </div><!-- #poststuff -->
-    </form>
-</div><!-- .wrap -->
-
-<?php
-		/**
-		 * Runs just before displaying the footer text in the "Bulk Delete Posts" admin page.
-		 *
-		 * This action is primarily for adding extra content in the footer of "Bulk Delete Posts" admin page.
-		 *
-		 * @since 5.0
-		 */
-		do_action( 'bd_admin_footer_posts_page' );
 	}
 
 	/**
